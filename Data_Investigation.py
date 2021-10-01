@@ -142,6 +142,3 @@ print(len(empty_list))
 print(len(typeless))
 print(message_counter)
 print('number valid:',valid_message_counter-len(typeless))
-
-
-          
