@@ -5,6 +5,7 @@ dbutils.fs.ls("/mnt/lsde/ais/2015/01/06")
 # COMMAND ----------
 
 df1 = spark.read.option("sep",",").csv("/mnt/lsde/ais/2015/01/06/12-46.txt")
+
 df1.show()
 # _c0 = indicates format (AIVDM in our case)
 # _c1 = count fragments accumulating  message
