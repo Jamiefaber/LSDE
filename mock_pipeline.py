@@ -1,9 +1,16 @@
+import os
+import sys
+
+os.environ['PYSPARK_PYTHON'] = sys.executable
+os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
+
 from pyspark.sql.session import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import FloatType, ArrayType, IntegerType
 from pyais import decode_msg
 from geopy import distance
-import sys
+
+
 
 def main ():
 
