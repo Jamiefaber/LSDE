@@ -4,6 +4,7 @@ from pyspark.sql.types import FloatType, ArrayType, IntegerType
 from pyais import decode_msg
 from geopy import distance
 import sys
+import numpy as np
 
 def main ():
 
@@ -48,8 +49,9 @@ def main ():
         for port in broadcastedports.value:
             port_lat = float(port[0])
             port_lon = float(port[1])
-            dis = distance.distance((port_lat, port_lon), (lat, lon)).km
-            if dis < 10:
+            if (np.abs(port_lat-lat) < 0.09) and (np.abs(port_lon-lon) < 0.09):
+            # dis = distance.distance((port_lat, port_lon), (lat, lon)).km
+            # if dis < 10:
                 return None
         return mmsi
         
@@ -57,10 +59,34 @@ def main ():
     port_loc_check = udf(port_filter, FloatType())
     
     df3 = df2.select(port_loc_check(array(col("MMSI"), col("lat"), col("long"))).alias("mmsinr"))
-    df4 = df2.join(df3, on=(col("MMSI") == col("mmsinr")))
+    df4 = df2.join(df3, on=(col("MMSI") == col("mmsinr"))) \
+        .drop(col("mmsinr"))
     
-    print(df4.show(n=5))
-    print(df4.count())
+    dfs = df4.select(col("MMSI"), col("lat"), col("long"))
+    broadcastedships = spark.sparkContext.broadcast(dfs.collect())
+
+    def encounter(arr):
+        mmsi, lat, lon  = arr[0], arr[1], arr[2]
+        neighbours = []
+        for ship in broadcastedships.value:
+            ship_mmsi = ship[0]
+            if mmsi != ship_mmsi:
+                ship_lat = ship[1]
+                ship_lon = ship[2]
+                if (np.abs(ship_lat-lat) < 0.009) and (np.abs(ship_lon-lon) < 0.05):
+                    dis = distance.distance((ship_lat, ship_lon), (lat, lon)).km
+                    if dis <= 0.5:
+                        neighbours.append(ship_mmsi)
+        if len(neighbours) == 0:
+            return None
+        return neighbours
+
+    encounter_finder = udf(encounter, ArrayType(FloatType()))
+    df5 = df4.select(col("MMSI"), col("lat"), col("long"), encounter_finder(array(col("MMSI"), col("lat"), col("long"))).alias("neighbours")) \
+        .na.drop()
+
+    print(df5.show())
+    # print(df5.count())
 
 if __name__ == "__main__":
     main()
