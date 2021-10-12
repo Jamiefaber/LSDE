@@ -1,0 +1,7 @@
+/* Can make changes to webpage in CSS here */
+
+h1 {
+    color: rgb(214, 112, 16);
+  }
+
+#mapid { height: 650px; width: 1035px;}
