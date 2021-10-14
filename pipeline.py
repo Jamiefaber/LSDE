@@ -20,6 +20,8 @@ def read(spark, year, month, day, hour, first_min):
     # Load files
     if first_min < 10:
         minute = "0"+str(first_min)
+    else:
+        minute = first_min
     if hour < 10:
         hour = "0"+str(hour)
     df1 = spark.read.option("sep","\t").csv(path+f"{hour}-{minute}.txt")
@@ -57,6 +59,8 @@ def read(spark, year, month, day, hour, first_min):
     df2 = df2.groupBy("MMSI").agg(avg("lat").alias("lat"), avg("long").alias("long"))
     if first_min < 10:
         minute = "0"+str(first_min)
+    else:
+        minute = first_min
     df2 = df2.withColumn('datetime', lit(path+str(hour)+"-"+str(minute)).cast(StringType()))
     print(df2.show())
     
