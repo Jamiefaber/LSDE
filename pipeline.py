@@ -85,18 +85,57 @@ def ports(spark, cell_width, cell_length):
 
     coords = []
     cell_counter = 0
+    neighbour_matrix = np.full((int(180/cell_length)+2, int(360/cell_width)), -1)
+    print(neighbour_matrix.shape)
     for i in range(-90,90, cell_length):
         for j in range(-180,180,cell_width):
             coords.append((cell_counter, j, j+cell_width, i, i+cell_length))
             cell_counter += 1
-    
+
+    cell_counter = 0
+    for i in range(1, int(180/cell_length)+1):
+        for j in range(int(360/cell_width)):
+            neighbour_matrix[i, j] = int(cell_counter)
+            cell_counter += 1
+    print(neighbour_matrix)
     cell_map = spark.createDataFrame(data=coords, schema=port_map_schema)
     broadcastedcells = spark.sparkContext.broadcast(cell_map.collect())
     
-    # port_schema = StructType()
-    # for i in range(int((180/cell_length)*(360/cell_width))):
-    #     addon = [StructField(f"{i}", ArrayType(ArrayType(FloatType())), True)]
-    #     port_schema = StructType(port_schema.fields + addon)
+    # make a list of neighbour tuples
+    neighbour_tuples = []
+    for i in range(1, neighbour_matrix.shape[0]-1):
+        for j in range(neighbour_matrix.shape[1]):
+
+            # to wrap around the longitude
+            right = j+1
+            if j == int(360/cell_width)-1:
+                right = 0
+
+            curr_id = int(neighbour_matrix[i,j])
+            neighbour_tuples.append((curr_id, curr_id))
+            neighbour_id_1 = int(neighbour_matrix[i-1, j-1])
+            neighbour_tuples.append((curr_id, neighbour_id_1))
+            neighbour_id_2 = int(neighbour_matrix[i-1, j])
+            neighbour_tuples.append((curr_id, neighbour_id_2))
+            neighbour_id_3 = int(neighbour_matrix[i-1, right])
+            neighbour_tuples.append((curr_id, neighbour_id_3))
+            neighbour_id_4 = int(neighbour_matrix[i, j-1])
+            neighbour_tuples.append((curr_id, neighbour_id_4))
+            neighbour_id_5 = int(neighbour_matrix[i, right])
+            neighbour_tuples.append((curr_id, neighbour_id_5))
+            neighbour_id_6 = int(neighbour_matrix[i+1, j-1])
+            neighbour_tuples.append((curr_id, neighbour_id_6))
+            neighbour_id_7 = int(neighbour_matrix[i+1, j])
+            neighbour_tuples.append((curr_id, neighbour_id_7))
+            neighbour_id_8 = int(neighbour_matrix[i+1, right])
+            neighbour_tuples.append((curr_id, neighbour_id_8))
+
+    # make dataframe from neighbour tuples
+    neighbour_schema = StructType([StructField("Cell", IntegerType(), True), \
+        StructField("Neighbour", IntegerType(), True), \
+        ])
+
+    dfn = spark.createDataFrame(data=neighbour_tuples, schema=neighbour_schema).where(col("Neighbour") != -1)
 
     def groupToCell(arr):
         lat, lon = float(arr[0]), float(arr[1])
@@ -108,8 +147,6 @@ def ports(spark, cell_width, cell_length):
     
     dfp = dfp.select(col('lat'), col('lon'), group_to_cell(array(col('lat'), col('lon'))).alias('cell')) \
         .orderBy('cell')
-    
-    print(dfp.show())
 
 
 def main():
@@ -117,7 +154,7 @@ def main():
     cell_width, cell_length = 5, 5
     spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "36000").getOrCreate()
 
-    # ports(spark, cell_width, cell_length)
+    ports(spark, cell_width, cell_length)
     # dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("2016/ports.csv*")
     
     # dfp = dfp.select(col("latitude").alias("lat"), col("longitude").alias("lon"))
@@ -130,7 +167,7 @@ def main():
     #             for hour in range(0, 24):
     #                 read(year, month, day, hour)
     
-    df = read(spark, 2016, 4, 15, 12, 0)
+    # df = read(spark, 2016, 4, 15, 12, 0)
 
     # Creates cell_id for schema
     # tuple_list = []
