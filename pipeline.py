@@ -6,22 +6,32 @@ from geopy import distance
 import sys
 import numpy as np
 
-def read(spark, year, month, day, hour):
+def read(spark, year, month, day, hour, first_min):
     """
     Takes the current data (year, month, day) and hour, loads in the corresponding text files containing the AIS messages.
     Returns:    dataframe containing the MMSI number, speed, latiitude, longitude of every unique vessel in the file.   
     """
 
     # Set directory path
-    path = f"{year}/0{month}/{day}/"
+    if month < 10:
+        month = "0"+str(month)
+    path = f"{year}/{month}/{day}/"
 
-    # Load first 3 files of the hour
-    df1 = spark.read.option("sep","\t").csv(path+f"{hour}-00.txt")
-    df2 = spark.read.option("sep","\t").csv(path+f"{hour}-01.txt")
-    df3 = spark.read.option("sep","\t").csv(path+f"{hour}-02.txt")
+    # Load files
+    if first_min < 10:
+        minute = "0"+str(first_min)
+    if hour < 10:
+        hour = "0"+str(hour)
+    df1 = spark.read.option("sep","\t").csv(path+f"{hour}-{minute}.txt")
+    for i in range(5):
+        try:
+            if i+first_min < 10:
+                minute = "0"+str(i+first_min)
 
-    # Join these dataframes
-    df = df1.union(df2.union(df3))
+            df2 = spark.read.option("sep","\t").csv(path+f"{hour}-{minute}.txt")
+            df1 = df1.union(df2)
+        except:
+            pass
 
     def decode(filename):
         """
@@ -35,18 +45,20 @@ def read(spark, year, month, day, hour):
 
                     # Only saves vessels with a valid position and speed under 2 knots.
                     if (float(decoded_message['lat']) != 91.0) and (float(decoded_message['lon']) != 181.0) and (float(decoded_message['speed']) < 2):
-                        return [float(decoded_message["mmsi"]), float(decoded_message["speed"]), float(decoded_message["lat"]), float(decoded_message["lon"])]
+                        return [float(decoded_message["mmsi"]), float(decoded_message["lat"]), float(decoded_message["lon"])]
             except: pass
 
     # Defines user defined function
     msg_cont = udf(decode, ArrayType(FloatType()))
 
     # Separates array into individual columns and drops duplicated MMSI numbers
-    df1 = df.select(msg_cont("_c0").alias("AIS"))
-    df2 = df1.select(col("AIS")[0].alias("MMSI"),col("AIS")[1].alias("speed"),col("AIS")[2].alias("lat"), col("AIS")[3].alias("long"))
-    df2 = df2 \
-        .dropDuplicates(["MMSI"]) \
-        .na.drop()
+    df1 = df1.select(msg_cont("_c0").alias("AIS"))
+    df2 = df1.select(col("AIS")[0].alias("MMSI"),col("AIS")[1].alias("lat"), col("AIS")[2].alias("long")).na.drop()
+    df2 = df2.groupBy("MMSI").agg(avg("lat").alias("lat"), avg("long").alias("long"))
+    if first_min < 10:
+        minute = "0"+str(first_min)
+    df2 = df2.withColumn('datetime', lit(path+str(hour)+"-"+str(minute)).cast(StringType()))
+    print(df2.show())
     
     # df2 = df2.withColumn("info", array([array([col('MMSI'), col('speed'), col("lat"), col("long")])])).select("info")
     # df2 = df2.select(flatten("info")).collect()
@@ -101,7 +113,7 @@ def main():
     cell_width, cell_length = 5, 5
     spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "36000").getOrCreate()
 
-    ports(spark, cell_width, cell_length)
+    # ports(spark, cell_width, cell_length)
     # dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("2016/ports.csv*")
     
     # dfp = dfp.select(col("latitude").alias("lat"), col("longitude").alias("lon"))
@@ -114,14 +126,20 @@ def main():
     #             for hour in range(0, 24):
     #                 read(year, month, day, hour)
     
-    # df = read(spark, 2016, 4, 15, 12)
+    df = read(spark, 2016, 4, 15, 12, 0)
 
-    schema = StructType([StructField("Date", StringType(), True)])
-    for i in range(3):
-        addon = [StructField(f"{i}", ArrayType(ArrayType(FloatType())), True)]
-        schema = StructType(schema.fields + addon)
+    # Creates cell_id for schema
+    # tuple_list = []
+    # for i in range(int(180/cell_length)):
+    #     for j in range(int(360/cell_width)):
+    #         tuple_list.append((i,j))
 
-    # df_end = spark.createDataFrame(data=[("15/04/2016", [[lat,lon], [lat, lon]], [28.,30.],)], schema=schema)
+    # schema = StructType([StructField("Date", StringType(), True)])
+    # for id in tuple_list:
+    #     addon = [StructField(f"{id}", ArrayType(ArrayType(FloatType())), True)]
+    #     schema = StructType(schema.fields + addon)
+
+    # df_end = spark.createDataFrame(data=[("15/04/2016", [[22.,21.], [23., 25.]], [[28.,30.]],)], schema=schema)
     # print(df_end.show())
 
 if __name__ == "__main__":
