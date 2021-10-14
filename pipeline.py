@@ -1,16 +1,17 @@
 from pyspark.sql.session import SparkSession
 from pyspark.sql.functions import *
-from pyspark.sql.types import FloatType, ArrayType, IntegerType, StringType, StructType, StructField
+from pyspark.sql.types import FloatType, ArrayType, IntegerType, StringType, StructType, StructField, BooleanType
 from pyais import decode_msg, FileReaderStream
 from geopy import distance
 import sys
 import numpy as np
 
-def read(spark, year, month, day, hour, first_min):
+def read(spark, cell_map, year, month, day, hour, first_min):
     """
     Takes the current data (year, month, day) and hour, loads in the corresponding text files containing the AIS messages.
     Returns:    dataframe containing the MMSI number, speed, latiitude, longitude of every unique vessel in the file.   
     """
+    broadcastedcells = spark.sparkContext.broadcast(cell_map.collect())
 
     # Set directory path
     if month < 10:
@@ -62,21 +63,25 @@ def read(spark, year, month, day, hour, first_min):
     else:
         minute = first_min
     df2 = df2.withColumn('datetime', lit(path+str(hour)+"-"+str(minute)).cast(StringType()))
-    print(df2.show())
+
+    def groupToCell(arr):
+        lat, lon = float(arr[0]), float(arr[1])
+        for cell in broadcastedcells.value:
+            if (lon > cell[1]) and (lon <= cell[2]) and (lat > cell[3]) and (lat <= cell[4]):
+                return cell[0]
+
+    group_to_cell = udf(groupToCell, IntegerType()).asNondeterministic()
+
+    df3 = df2.select(col("datetime"), col("MMSI"), col('lat'), col('long') ,group_to_cell(array(col('lat'), col('long'))).alias('cellid'))
     
-    # df2 = df2.withColumn("info", array([array([col('MMSI'), col('speed'), col("lat"), col("long")])])).select("info")
-    # df2 = df2.select(flatten("info")).collect()
-    # print(df2.show())
-    
-    return df2
+    return df3
 
 def ports(spark, cell_width, cell_length):
     # Loads in csv file of all major port coordinates
     dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("2016/ports.csv*")
-    dfp = dfp.select(col("latitude").alias("lat"), col("longitude").alias("lon"))
-    # dfp = dfp.withColumn('cell', lit(-1).cast(IntegerType()))
+    dfp = dfp.select(col("latitude").alias("latp"), col("longitude").alias("longp"))
 
-    port_map_schema = StructType([StructField("Cell", IntegerType(), True), \
+    port_map_schema = StructType([StructField("cell", IntegerType(), True), \
         StructField("Long_min", IntegerType(), True), \
         StructField("Long_max", IntegerType(), True), \
         StructField("Lat_min", IntegerType(), True), \
@@ -86,7 +91,7 @@ def ports(spark, cell_width, cell_length):
     coords = []
     cell_counter = 0
     neighbour_matrix = np.full((int(180/cell_length)+2, int(360/cell_width)), -1)
-    print(neighbour_matrix.shape)
+  
     for i in range(-90,90, cell_length):
         for j in range(-180,180,cell_width):
             coords.append((cell_counter, j, j+cell_width, i, i+cell_length))
@@ -97,7 +102,7 @@ def ports(spark, cell_width, cell_length):
         for j in range(int(360/cell_width)):
             neighbour_matrix[i, j] = int(cell_counter)
             cell_counter += 1
-    print(neighbour_matrix)
+
     cell_map = spark.createDataFrame(data=coords, schema=port_map_schema)
     broadcastedcells = spark.sparkContext.broadcast(cell_map.collect())
     
@@ -131,7 +136,7 @@ def ports(spark, cell_width, cell_length):
             neighbour_tuples.append((curr_id, neighbour_id_8))
 
     # make dataframe from neighbour tuples
-    neighbour_schema = StructType([StructField("Cell", IntegerType(), True), \
+    neighbour_schema = StructType([StructField("celln", IntegerType(), True), \
         StructField("Neighbour", IntegerType(), True), \
         ])
 
@@ -145,8 +150,35 @@ def ports(spark, cell_width, cell_length):
 
     group_to_cell = udf(groupToCell, IntegerType()).asNondeterministic()
     
-    dfp = dfp.select(col('lat'), col('lon'), group_to_cell(array(col('lat'), col('lon'))).alias('cell')) \
-        .orderBy('cell')
+    dfp = dfp.select(col('latp'), col('longp'), group_to_cell(array(col('latp'), col('longp'))).alias('cellp')) \
+        .orderBy('cellp')
+
+    return cell_map, dfn, dfp
+
+def filter(spark, dfn, dfp, df):
+  
+    # Acquires neighbouring cells for each vessel
+    df = df.join(dfn, on=(col("cellid") == col("celln")), how="inner")
+
+    # Acquires ports in neighbouring cells for each vessel
+    df = df.join(dfp, on=(col("neighbour") == col("cellp")), how="inner") \
+        .select("datetime", "MMSI", "lat", "long", "cellid", "latp", "longp")
+
+    def filterp(arr):
+        lat, lon, latp, lonp   = arr[0], arr[1], arr[2], arr[3]
+        dis = distance.distance((lat, lon), (latp, lonp)).km
+        if dis < 10:
+            return None
+        else:
+            return 1
+    
+    port_filter = udf(filterp, IntegerType()).asNondeterministic()
+
+    df = df.select("datetime", "MMSI", "lat", "long", "cellid", port_filter(array("lat", "long", "latp", "longp"))).dropna().dropDuplicates(["MMSI"])
+
+    print(df.count())
+    
+
 
 
 def main():
@@ -154,7 +186,7 @@ def main():
     cell_width, cell_length = 5, 5
     spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "36000").getOrCreate()
 
-    ports(spark, cell_width, cell_length)
+    cell_map, dfn, dfp = ports(spark, cell_width, cell_length)
     # dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("2016/ports.csv*")
     
     # dfp = dfp.select(col("latitude").alias("lat"), col("longitude").alias("lon"))
@@ -167,8 +199,8 @@ def main():
     #             for hour in range(0, 24):
     #                 read(year, month, day, hour)
     
-    # df = read(spark, 2016, 4, 15, 12, 0)
-
+    df = read(spark, cell_map, 2016, 4, 15, 13, 0)
+    filter(spark, dfn, dfp, df)
     # Creates cell_id for schema
     # tuple_list = []
     # for i in range(int(180/cell_length)):
