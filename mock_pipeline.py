@@ -1,4 +1,9 @@
+import os
+import sys
+
 from pyspark.sql.session import SparkSession
+from pyspark.conf import SparkConf
+from pyspark.sql import SQLContext
 from pyspark.sql.functions import *
 from pyspark.sql.types import FloatType, ArrayType, IntegerType
 from pyais import decode_msg
@@ -8,7 +13,7 @@ import numpy as np
 
 def main ():
 
-    spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "36000").getOrCreate()
+    spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "360000").config("spark.executor.heartbeatInterval","3600000").config("spark.network.timeout", "3600000").getOrCreate()
 
     path = "data/"
 
