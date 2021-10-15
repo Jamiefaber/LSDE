@@ -87,7 +87,7 @@ def ports(spark, cell_width, cell_length):
         StructField("Lat_min", IntegerType(), True), \
         StructField("Lat_max", IntegerType(), True), \
         ])
-
+   
     coords = []
     cell_counter = 0
     neighbour_matrix = np.full((int(180/cell_length)+2, int(360/cell_width)), -1)
@@ -156,13 +156,15 @@ def ports(spark, cell_width, cell_length):
     return cell_map, dfn, dfp
 
 def filter(spark, dfn, dfp, df):
-  
+    
     # Acquires neighbouring cells for each vessel
     df = df.join(dfn, on=(col("cellid") == col("celln")), how="inner")
 
     # Acquires ports in neighbouring cells for each vessel
     df = df.join(dfp, on=(col("neighbour") == col("cellp")), how="inner") \
         .select("datetime", "MMSI", "lat", "long", "cellid", "latp", "longp")
+
+    print(df.show(n=100))
 
     def filterp(arr):
         lat, lon, latp, lonp   = arr[0], arr[1], arr[2], arr[3]
@@ -175,11 +177,7 @@ def filter(spark, dfn, dfp, df):
     port_filter = udf(filterp, IntegerType()).asNondeterministic()
 
     df = df.select("datetime", "MMSI", "lat", "long", "cellid", port_filter(array("lat", "long", "latp", "longp"))).dropna().dropDuplicates(["MMSI"])
-
-    print(df.count())
     
-
-
 
 def main():
 

@@ -17,8 +17,8 @@ def main ():
 
     path = "data/"
 
-    df1 = spark.read.option("sep","\t").csv(path+"12-45.txt")
-    dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load(path+"ports.csv*")
+    df1 = spark.read.option("sep","\t").csv("2016/04/15/13-00.txt")
+    dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("2016/ports.csv*")
     
     dfp = dfp.select(col("latitude").alias("lat"), col("longitude").alias("lon"))
     broadcastedports = spark.sparkContext.broadcast(dfp.collect())
@@ -47,6 +47,7 @@ def main ():
     df2 = df2 \
         .dropDuplicates(["MMSI"]) \
         .na.drop()
+    print(df2.count())
 
     def port_filter(arr):
         mmsi, lat, lon = arr[0], arr[1], arr[2]
@@ -54,9 +55,9 @@ def main ():
         for port in broadcastedports.value:
             port_lat = float(port[0])
             port_lon = float(port[1])
-            if (np.abs(port_lat-lat) < 0.09) and (np.abs(port_lon-lon) < 0.09):
-            # dis = distance.distance((port_lat, port_lon), (lat, lon)).km
-            # if dis < 10:
+            # if (np.abs(port_lat-lat) < 0.09) and (np.abs(port_lon-lon) < 0.09):
+            dis = distance.distance((port_lat, port_lon), (lat, lon)).km
+            if dis < 10:
                 return None
         return mmsi
         
@@ -66,7 +67,7 @@ def main ():
     df3 = df2.select(port_loc_check(array(col("MMSI"), col("lat"), col("long"))).alias("mmsinr"))
     df4 = df2.join(df3, on=(col("MMSI") == col("mmsinr"))) \
         .drop(col("mmsinr"))
-    
+    print(df4.count())
     dfs = df4.select(col("MMSI"), col("lat"), col("long"))
     broadcastedships = spark.sparkContext.broadcast(dfs.collect())
 
