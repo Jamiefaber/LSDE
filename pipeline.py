@@ -13,23 +13,28 @@ def read(spark, cell_map, year, month, day, hour, first_min):
     """
 
     # Set directory path
-    if month < 10:
+    if int(month) < 10:
         month = "0"+str(month)
     path = f"{year}/{month}/{day}/"
 
     # Load files
-    if first_min < 10:
+    if int(first_min) < 10:
         minute = "0"+str(first_min)
     else:
         minute = first_min
-    if hour < 10:
+    if int(hour) < 10:
         hour = "0"+str(hour)
+    
+    emp_RDD = spark.sparkContext.emptyRDD()
+ 
+    # Create empty schema
+    columns = StructType([StructField("_c0", StringType(), True)])
+    
+    # Create an empty RDD with empty schema
+    df1 = spark.createDataFrame(data = emp_RDD,
+                             schema = columns)
 
-    try:
-        df1 = spark.read.option("sep","\t").csv(path+f"{hour}-{minute}.txt")
-    except:
-        return None
-
+    empty_check = 0
     for i in range(5):
         try:
             if i+first_min < 10:
@@ -37,8 +42,12 @@ def read(spark, cell_map, year, month, day, hour, first_min):
 
             df2 = spark.read.option("sep","\t").csv(path+f"{hour}-{minute}.txt")
             df1 = df1.union(df2)
+            empty_check += 1
         except:
             pass
+    
+    if empty_check == 0:
+        return None
 
     def decode(filename):
         """
@@ -62,7 +71,7 @@ def read(spark, cell_map, year, month, day, hour, first_min):
     df1 = df1.select(msg_cont("_c0").alias("AIS"))
     df2 = df1.select(col("AIS")[0].alias("MMSI"),col("AIS")[1].alias("lat"), col("AIS")[2].alias("long")).na.drop()
     df2 = df2.groupBy("MMSI").agg(avg("lat").alias("lat"), avg("long").alias("long"))
-    if first_min < 10:
+    if int(first_min) < 10:
         minute = "0"+str(first_min)
     else:
         minute = first_min
@@ -215,31 +224,31 @@ def get_vessel_pairs(spark, df, dfn):
 
 def main():
 
-    cell_width, cell_length = 1, 1
+    cell_width, cell_length = 5, 5
     spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "36000").getOrCreate()
 
     cell_map, dfn, dfp = ports(spark, cell_width, cell_length)
 
-    for year in [2015, 2016, 2017]:
-        for month in range(1, 13):
-            for day in range(1, 32):
-                for hour in range(0, 24):
-                    for minute in range(0, 60, 5):
+    for year in [2016]:
+        for month in [4]:
+            if int(month) < 10:
+                month = "0"+str(month)
+            for day in [15]:
+                if int(day) < 10:
+                    day = "0"+str(day)
+                for hour in [12]:
+                    if int(hour) < 10:
+                        hour = "0"+str(hour)  
+                    for minute in [0, 5, 10]:
                         
-                        df = read(spark, cell_map, year, month, day, hour, minute)
-                        if df != None:
-                            print("HEYOOOO")
-                            df = filter_port(spark, dfn, dfp, df)
-                            df = get_vessel_pairs(spark, df, dfn)
-                            if month < 10:
-                                month = "0"+str(month)
-                            if day < 10:
-                                day = "0"+str(day)
-                            if hour < 10:
-                                hour = "0"+str(hour)  
-                            if minute < 10:
-                                minute = "0"+str(minute)                       
-                            df.write.mode("overwrite").parquet(f"{year}/{month}/{day}/{hour}-{minute}.parquet")
+                        df = read(spark, cell_map, int(year), int(month), int(day), int(hour), int(minute))
+                        
+                        df = filter_port(spark, dfn, dfp, df)
+                        df = get_vessel_pairs(spark, df, dfn)
+
+                        if int(minute) < 10:
+                            minute = "0"+str(minute)                       
+                        df.write.mode("overwrite").parquet(f"{year}/{month}/{day}/{hour}-{minute}.parquet")
 
 if __name__ == "__main__":
     main()
