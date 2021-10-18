@@ -15,7 +15,7 @@ def read(spark, cell_map, year, month, day, hour, first_min):
     # Set directory path
     if int(month) < 10:
         month = "0"+str(month)
-    path = f"LSDE/{year}/{month}/{day}/"
+    path = f"{year}/{month}/{day}/"
 
     # Load files
     if int(first_min) < 10:
@@ -93,7 +93,7 @@ def read(spark, cell_map, year, month, day, hour, first_min):
 
 def ports(spark, cell_width, cell_length):
     # Loads in csv file of all major port coordinates
-    dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("LSDE/2016/ports.csv*")
+    dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("2016/ports.csv*")
     dfp = dfp.select(col("latitude").alias("latp"), col("longitude").alias("longp"))
 
     port_map_schema = StructType([StructField("cell", IntegerType(), True), \
@@ -179,7 +179,7 @@ def filter_port(spark, dfn, dfp, df):
     df = df.join(dfp, on=(col("neighbour") == col("cellp")), how="left") \
         .select("datetime", "MMSI", "lat", "long", "cellid", "latp", "longp")
 
-    print(df.show(n=100))
+    print(df.count())
 
     def filterp(arr):
         lat, lon, latp, lonp   = arr[0], arr[1], arr[2], arr[3]
@@ -227,7 +227,7 @@ def get_vessel_pairs(spark, df, dfn):
 
 def main():
 
-    cell_width, cell_length = 0.1, 0.1
+    cell_width, cell_length = 2, 2
     spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "36000").getOrCreate()
 
     cell_map, dfn, dfp = ports(spark, cell_width, cell_length)
@@ -251,7 +251,7 @@ def main():
 
                         if int(minute) < 10:
                             minute = "0"+str(minute)                       
-                        df.write.mode("overwrite").parquet(f"{year}/{month}/{day}/{hour}-{minute}.parquet")
+                        # df.write.mode("overwrite").parquet(f"{year}/{month}/{day}/{hour}-{minute}.parquet")
 
 if __name__ == "__main__":
     main()
