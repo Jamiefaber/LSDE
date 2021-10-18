@@ -112,7 +112,7 @@ let [arrayDG,arrayG,arrayO,arrayR,arrayDR] = [[], [], [], [], []]
                 createLayers(feature.properties.ID, marker)
             }
         }).addTo(mymap);
-        var layers = L.layerGroup([arrayDG,arrayG])
+        var layers = L.layerGroup(arrayDG)
         sliderControl = L.control.sliderControl({
             position: "topright",
             layer: layers,
