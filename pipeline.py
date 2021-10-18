@@ -15,7 +15,7 @@ def read(spark, cell_map, year, month, day, hour, first_min):
     # Set directory path
     if int(month) < 10:
         month = "0"+str(month)
-    path = f"LSDE/{year}/{month}/{day}/"
+    path = f"{year}/{month}/{day}/"
 
     # Load files
     if int(first_min) < 10:
@@ -75,7 +75,12 @@ def read(spark, cell_map, year, month, day, hour, first_min):
         minute = "0"+str(first_min)
     else:
         minute = first_min
-    df2 = df2.withColumn('datetime', lit(path+str(hour)+"-"+str(minute)).cast(StringType()))
+    # df2 = df2.withColumn('datetime', lit(path+str(hour)+"-"+str(minute)).cast(StringType()))
+    df2 = df2.withColumn('year', lit(int(year)).cast(IntegerType())) \
+        .withColumn('month', lit(int(month)).cast(IntegerType())) \
+        .withColumn('day', lit(int(day)).cast(IntegerType())) \
+        .withColumn('hour', lit(int(hour)).cast(IntegerType())) \
+        .withColumn('minute', lit(int(minute)).cast(IntegerType()))
 
     broadcastedcells = spark.sparkContext.broadcast(cell_map.collect())
 
@@ -87,13 +92,13 @@ def read(spark, cell_map, year, month, day, hour, first_min):
 
     group_to_cell = udf(groupToCell, IntegerType()).asNondeterministic()
 
-    df3 = df2.select(col("datetime"), col("MMSI"), col('lat'), col('long') ,group_to_cell(array(col('lat'), col('long'))).alias('cellid'))
+    df3 = df2.select(col("year"), col("month"), col("day"), col("hour"), col("minute"), col("MMSI"), col('lat'), col('long') ,group_to_cell(array(col('lat'), col('long'))).alias('cellid'))
     
     return df3
 
 def ports(spark, cell_width, cell_length):
     # Loads in csv file of all major port coordinates
-    dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("LSDE/2016/ports.csv*")
+    dfp = spark.read.format("csv").option("header", "true").option("delimiter", ",").option("inferschema", "true").load("2016/ports.csv*")
     dfp = dfp.select(col("latitude").alias("latp"), col("longitude").alias("longp"))
 
     port_map_schema = StructType([StructField("cell", IntegerType(), True), \
@@ -177,9 +182,7 @@ def filter_port(spark, dfn, dfp, df):
 
     # Acquires ports in neighbouring cells for each vessel
     df = df.join(dfp, on=(col("neighbour") == col("cellp")), how="left") \
-        .select("datetime", "MMSI", "lat", "long", "cellid", "latp", "longp")
-
-    print(df.show(n=100))
+        .select("year", "month", "day", "hour", "minute", "MMSI", "lat", "long", "cellid", "latp", "longp")
 
     def filterp(arr):
         lat, lon, latp, lonp   = arr[0], arr[1], arr[2], arr[3]
@@ -189,11 +192,11 @@ def filter_port(spark, dfn, dfp, df):
     port_filter = udf(filterp, FloatType()).asNondeterministic()
 
     # Calculates distance between vessel and ports in the neighbourhood of the vessel
-    dffilter = df.select("datetime", "MMSI", "lat", "long", "cellid", port_filter(array("lat", "long", "latp", "longp")).alias("dis"))
+    dffilter = df.select("year", "month", "day", "hour", "minute", "MMSI", "lat", "long", "cellid", port_filter(array("lat", "long", "latp", "longp")).alias("dis"))
 
     # filters out all vessels that are within 10km of a port and removes them from df
     dffilter = dffilter.join(dffilter.where(col("dis") < 10).select("MMSI"), on="MMSI", how="leftanti").dropDuplicates(["MMSI"])
-    df = dffilter.select("datetime", "MMSI", "cellid", "lat", "long")
+    df = dffilter.select("year", "month", "day", "hour", "minute", "MMSI", "cellid", "lat", "long")
    
     return df
     
@@ -205,7 +208,6 @@ def get_vessel_pairs(spark, df, dfn):
     # Creates vessel pairs
     df = df.select(col("MMSI").alias("MMSI2"), col("cellid"), col("lat").alias("lat2"), col("long").alias("long2"))
     df = df2.join(df, on=(col("neighbour") == col("cellid")), how="inner")
-    print(df.count())
 
     # Removes duplicate pairs of vessels
     df = df.where(col("MMSI") > col("MMSI2"))
@@ -218,7 +220,7 @@ def get_vessel_pairs(spark, df, dfn):
     pair_filter = udf(filter_pairs, FloatType()).asNondeterministic()
 
     # Only keeps vessel pairs which are less than 500m away from each other
-    df = df.select("datetime", "MMSI", "MMSI2", "cellid", pair_filter(array("lat", "long", "lat2", "long2")).alias("dis")) \
+    df = df.select("year", "month", "day", "hour", "minute", "MMSI", "MMSI2", "cellid", pair_filter(array("lat", "long", "lat2", "long2")).alias("dis")) \
         .where(col("dis") < 0.5).drop(col("dis"))
     
     return df
@@ -227,31 +229,51 @@ def get_vessel_pairs(spark, df, dfn):
 
 def main():
 
-    cell_width, cell_length = 0.1, 0.1
+    cell_width, cell_length = 3, 3
     spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "36000").getOrCreate()
 
     cell_map, dfn, dfp = ports(spark, cell_width, cell_length)
+
+    
 
     for year in [2016]:
         for month in [4]:
             if int(month) < 10:
                 month = "0"+str(month)
+             # Create empty RDD
+            emp_RDD = spark.sparkContext.emptyRDD()
+        
+            # Create empty schema
+            columns = StructType([StructField("year", IntegerType(), True), \
+                    StructField("month", IntegerType(), True), \
+                    StructField("day", IntegerType(), True), \
+                    StructField("hour", IntegerType(), True), \
+                    StructField("minute", IntegerType(), True), \
+                    StructField("MMSI", FloatType(), True), \
+                    StructField("MMSI2", FloatType(), True), \
+                    StructField("Cellid", IntegerType(), True), \
+            ])
+            
+            # Create an empty RDD with empty schema
+            df1 = spark.createDataFrame(data = emp_RDD,
+                            schema = columns)
             for day in [15]:
-                if int(day) < 10:
-                    day = "0"+str(day)
+                # if int(day) < 10:
+                #     day = "0"+str(day)
                 for hour in [12]:
-                    if int(hour) < 10:
-                        hour = "0"+str(hour)  
+                    # if int(hour) < 10:
+                    #     hour = "0"+str(hour)  
                     for minute in [0, 5, 10]:
                         
-                        df = read(spark, cell_map, int(year), int(month), int(day), int(hour), int(minute))
-                        
+                        df = read(spark, cell_map, int(year), int(month), int(day), int(hour), int(minute))  
                         df = filter_port(spark, dfn, dfp, df)
                         df = get_vessel_pairs(spark, df, dfn)
 
-                        if int(minute) < 10:
-                            minute = "0"+str(minute)                       
-                        df.write.mode("overwrite").parquet(f"{year}/{month}/{day}/{hour}-{minute}.parquet")
+                        # if int(minute) < 10:
+                        #     minute = "0"+str(minute)
+                        df1 = df1.union(df)
+            df1.orderBy("day").write.partitionBy("day").mode("overwrite").parquet(f"{year}/{month}.parquet")                     
+
 
 if __name__ == "__main__":
     main()
