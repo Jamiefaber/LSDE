@@ -272,7 +272,7 @@ def main():
                         # if int(minute) < 10:
                         #     minute = "0"+str(minute)
                         df1 = df1.union(df)
-            df1.orderBy("day").write.partitionBy("day").mode("overwrite").parquet(f"{year}/{month}.parquet")                     
+            df1.orderBy("day").write.partitionBy("day").mode("overwrite").parquet(f"{year}/{month}_parquet")                     
 
 
 if __name__ == "__main__":
