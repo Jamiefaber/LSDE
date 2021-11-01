@@ -4,9 +4,9 @@ from pyspark.sql.types import FloatType, ArrayType, IntegerType, StringType, Str
 from geopy import distance
 import numpy as np
 
-def filter_port(spark, dfp, df):
+def filter_port(spark, dfp, dfn_port, df):
   
-#     df = df.join(dfn, on=(col("cellid") == col("celln")), how="inner")
+    df = df.join(dfn_port, on=(col("cellid_port") == col("celln")), how="inner")
 
     # Acquires ports in neighbouring cells for each vessel
     df2 = df.join(dfp, on=(col("cellid_port") == col("cellp")), how="left") \
@@ -39,14 +39,21 @@ def filter_port(spark, dfp, df):
    
     return df
 
-def get_vessel_pairs(spark, df):
+def get_vessel_pairs(spark, df, dfn_vessels):
 
     # Acquires neighbouring cells for each vessel
-#     df2 = df.join(dfn, on=(col("cellid") == col("celln")), how="inner").drop(col("cellid"))
-
+    df2 = df.join(dfn_vessels, on=(col("cellid_ship") == col("celln")), how="inner") \
+        # .drop(col("cellid"))
+    
+    print(df.show(n=5))
+    # print(dfn_vessels.where(col("celln") < 1680871.0).show(n=5))
+    print(dfn_vessels.count())
+ 
     # Creates vessel pairs
-    df2 = df.select(col("MMSI").alias("MMSI2"), col("cellid_ship").alias("cellid_ship2"), col("lat").alias("lat2"), col("long").alias("long2"))
-    df = df2.join(df, on=(col("cellid_ship") == col("cellid_ship2")), how="inner")
+    df3 = df.select(col("MMSI").alias("MMSI2"), col("cellid_ship").alias("cellid_ship2"), col("lat").alias("lat2"), col("long").alias("long2"))
+    df = df2.join(df3, on=(col("cellid_ship") == col("cellid_ship2")), how="inner")
+
+    # print(df.show())
 
     # Removes duplicate pairs of vessels
     df = df.where(col("MMSI") > col("MMSI2"))
@@ -74,17 +81,26 @@ def main():
     path = "/mnt/group05/2016/"
   
     dfp = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("ports")
+    dfn_ports = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("neighbours_ports")
+    dfn_vessels = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("neighbours_vessel")
+
+    # print(dfn_ports.show())
+    # print(dfn_vessels.show())
     
-    df = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("data/15")
+    df = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("data2/15")
+    
     df = df.where((col("lat") <= 90) & (col("lat") >= -90) & (col("long") <= 180) & (col("long") >= -180))
+
+    # print(df.show().where(col("cellid_ship") = ))
     
-    df1 = filter_port(spark, dfp, df.where(col("day") == 15))
+    df1 = filter_port(spark, dfp, dfn_ports, df.where(col("day") == 15))
+    # print(df1.show())
 #     df1.write.mode("overwrite").parquet(f"/mnt/group05/test/pairs")
 #     df1 = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("/mnt/group05/test/pairs")
     
-    df2 = get_vessel_pairs(spark, df1)
+    df2 = get_vessel_pairs(spark, df1, dfn_vessels)
     
-    df2.write.mode("overwrite").parquet(f"pairs_simple")
+    df2.write.mode("overwrite").parquet(f"pairs_complex")
 
 if __name__ == "__main__":
     main()

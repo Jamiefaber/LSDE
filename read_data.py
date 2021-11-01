@@ -72,7 +72,7 @@ def read(spark, year, month, day):
             
             time = str(time).zfill(4)
 
-            return float(str(cell_ship)+time), cell_port
+            return float(str(cell_ship)), cell_port
           
         for frame in arr[1]:
             for vessel in frame:
@@ -110,7 +110,7 @@ def main():
     
     df = read(spark, year, month, day)
     if df:
-        df.orderBy("day").write.partitionBy("day").mode("append").parquet(f"data/15")
+        df.orderBy("day").write.partitionBy("day").mode("append").parquet(f"data2/15")
 
 if __name__ == "__main__":
  
