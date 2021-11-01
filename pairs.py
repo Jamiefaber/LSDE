@@ -73,9 +73,9 @@ def main():
     
     path = "/mnt/group05/2016/"
   
-    dfp = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("/mnt/group05/utils/ports")
+    dfp = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("ports")
     
-    df = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load(path+"04_parquet")
+    df = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("data/15")
     df = df.where((col("lat") <= 90) & (col("lat") >= -90) & (col("long") <= 180) & (col("long") >= -180))
     
     df1 = filter_port(spark, dfp, df.where(col("day") == 15))
@@ -84,7 +84,7 @@ def main():
     
     df2 = get_vessel_pairs(spark, df1)
     
-    df2.write.mode("overwrite").parquet(f"/mnt/group05/test/pairs2")
+    df2.write.mode("overwrite").parquet(f"pairs_simple")
 
 if __name__ == "__main__":
     main()
