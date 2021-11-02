@@ -2,6 +2,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.sql.functions import *
 from pyspark.sql.types import FloatType, ArrayType, IntegerType, StringType, StructType, StructField, BooleanType
 import numpy as np
+import sys
 
 def ports(spark, cell_width, cell_length):
     # Loads in csv file of all major port coordinates
@@ -67,40 +68,32 @@ def ports(spark, cell_width, cell_length):
             neighbour_id_8 = float(neighbour_matrix[i+1, right])
             neighbour_tuples.append((curr_id, neighbour_id_8))
 
+    print('HEYOOO')
+
     # make dataframe from neighbour tuples
     neighbour_schema = StructType([StructField("celln", FloatType(), True), \
         StructField("Neighbour", FloatType(), True), \
         ])
-
-    dfn = spark.createDataFrame(data=neighbour_tuples, schema=neighbour_schema).where(col("Neighbour") != -1)
-
-#     def groupToCell(arr):
-#         lat, lon = arr[0], arr[1]
-#         lat += 90
-#         lon += 180
-#         x_divs = 360 #360*1
-
-#         cell = x_divs*int(lat)+int(lon)
-#         return float(cell)
-
-#     group_to_cell = udf(groupToCell, FloatType()).asNondeterministic()
-    
-#     dfp = dfp.select(col('latp'), col('longp'), group_to_cell(array(col('latp'), col('longp'))).alias('cellp')) \
-# #         .orderBy('cellp')
-    
-#     dfp = dfp.groupBy("cellp").agg(collect_list(array(col("latp"), col("longp"))).alias("coords"))
-
+    for i in range(99):
+        dfn = spark.createDataFrame(data=neighbour_tuples[int(i*len(neighbour_tuples)/100):int((i+1)*len(neighbour_tuples)/100)], schema=neighbour_schema).where(col("Neighbour") != -1)
+        dfn.write.mode("append").parquet(f"neighbours_vessel")
+        print("WE'RE ON ", i)
+    # to get the last bit in
+    dfn = spark.createDataFrame(data=neighbour_tuples[int(99*len(neighbour_tuples)/100):], schema=neighbour_schema).where(col("Neighbour") != -1)
+    dfn.write.mode("append").parquet(f"neighbours_vessel")
     return dfn
 
 def main():
-    cell_width, cell_length = 1, 1
-    # cell_width, cell_length = 0.1, 0.1
+    # cell_width, cell_length = 1, 1
+    cell_width, cell_length = 0.1, 0.1
     spark = SparkSession.builder.config("spark.sql.broadcastTimeout", "360000").getOrCreate()
-
     dfn = ports(spark, cell_width, cell_length)
-    
+    # dfn = spark.read.format("parquet").option("header", "true").option("inferschema", "true").load("neighbours_vessel")
+
+    # print(dfn.count())
+    # dfn.write.mode("overwrite").parquet(f"neighbours_vessel2")  
 #     cell_map.write.mode("overwrite").parquet(f"/mnt/group05/utils/cell_map")
-    dfn.write.mode("overwrite").parquet(f"neighbours_ports")  
+    # dfn.write.mode("overwrite").parquet(f"neighbours_vessel")  
 #     dfn.write.mode("overwrite").parquet(f"/mnt/group05/utils/ports")  
 
 if __name__ == "__main__":
