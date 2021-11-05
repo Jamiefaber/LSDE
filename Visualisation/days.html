@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Meetings at Sea</title>
+    <!--stylesheets-->
+    <link rel="stylesheet" href="static/style.css">
+    <link rel="stylesheet" href="static/bootstrap.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!--jQuery UI files for slider-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js" integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+    <!-- map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
+   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
+    <!-- files -->
+    <script  src="data/encounters1.js"> </script>
+    <script src="data/SankeyD.js"></script>
+    <!-- markercluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster-src.js"></script>
+    <script src="scripts/layersupport.js"></script>
+    <script src="scripts/styledLayerControl.js"></script>
+    <!-- slidercontrol -->   
+    <script src="scripts/SliderControl.js"></script>
+    <!-- Graph -->
+    <script src="https://cdn.plot.ly/plotly-2.4.2.min.js"></script>
+</head>
+<body>
+    <!-- Responsive navbar-->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">Meetings At Sea</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="days.html">Days</a></li>
+                    <li class="nav-item"><a class="nav-link" href="months.html">Months</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="card mx-auto">
+        <div class="accordion" id="accordionExample">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                    Background Information and Instructions:
+                </button>
+              </h2>
+              <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    Use the slider to select the preferred day (Move the slider to make the data visible). The viewable days consist of the month February 2017. Click on the clustered markers to zoom in on the cluster or click on the ship marker to examine meeting information. 
+                    The vessel flag state is the country under which jurisdiction the vessels are and the duration shows the length of the meeting in hours. The map gives a detailed view of the locations of the meetings. As you can see, most meetings are coastal and in Europe.
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>  
+    
+    <div class="card mx-auto" style="margin-top: 15px;" >
+        <h5 class="card-header" >Daily Meeting Map:</h5>
+                <div id="mapid"></div>
+      </div>
+    <script  src="scripts/map2.js"> </script>
+
+    <div class="card mx-auto">
+        <div class="accordion" id="accordionExample">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                    Background Information and Instructions:
+                </button>
+              </h2>
+              <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    Below the map is a Sankey diagram, the shown date can be selected. Hover the diagram for further information or zoom in with the control panel to get a better view of specific countries. The flag states of the meeting vessels are displayed with a line connecting the countries.
+                    The circles are meetings between vessels from the same country. As can be seen in the graph the majority of the meetings are in Europe, namely The Netherlands.
+                </div>
+              </div>
+            </div>
+        </div>
+    </div> 
+
+        <select id="plotselect" class="form-select form-select-sm" aria-label=".form-select-sm example" style="width: 155px; margin-left: 20px; margin-top: 20px;" onchange="findplot()" >
+            <option value="47">February-01</option>
+            <option value="20">February-02</option>
+            <option value="21">February-03</option>
+            <option value="22">February-04</option>
+            <option value="23">February-05</option>
+            <option value="24">February-06</option>
+            <option value="25">February-07</option>
+            <option value="26">February-08</option>
+            <option value="27">February-09</option>
+            <option value="28">February-10</option>
+            <option value="29">February-11</option>
+            <option value="30">February-12</option>
+            <option value="31">February-13</option>
+            <option value="32">February-14</option>
+            <option value="33">February-15</option>
+            <option value="34">February-16</option>
+            <option value="35">February-17</option>
+            <option value="36">February-18</option>
+            <option value="37">February-19</option>
+            <option value="38">February-20</option>
+            <option value="39">February-21</option>
+            <option value="40">February-22</option>
+            <option value="41">February-23</option>
+            <option value="42">February-24</option>
+            <option value="43">February-25</option>
+            <option value="44">February-26</option>
+            <option value="45">February-27</option>
+            <option value="46">February-28</option>
+        </select>
+        <div id="myDiv"></div>
+      <script  src="scripts/charts.js"> </script>
+</body>
+   <!-- Footer-->
+   <footer class="py-5 bg-dark">
+    <div class="container"><p class="m-0 text-center text-white">Visualisation for LSDE 2021 Copyright &copy;</p></div>
+</footer>

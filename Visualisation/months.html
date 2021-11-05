@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <title>Meetings at Sea</title>
+        <!-- stylesheets -->
+        <link rel="stylesheet" href="static/bootstrap.css">
+        <link rel="stylesheet" href="static/style.css">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- map -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+        <!-- files -->
+        <script  src="data/months2017.js"> </script>
+        <script  src="data/months2016.js"> </script>
+        <script src="data/SankeyM.js"></script>
+        <!-- layercontrol -->
+        <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster-src.js"></script>
+        <script src="scripts/layersupport.js"></script>
+        <script src="scripts/styledLayerControl.js"></script>
+        <!-- awesomenumbers -->
+        <script src="scripts/leaflet_awesome_number_markers.js"></script>
+        <!-- Graph -->
+        <script src="https://cdn.plot.ly/plotly-2.4.2.min.js"></script>
+    </head>
+</head>
+<body>
+    <!-- Responsive navbar-->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">Meetings At Sea</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" aria-current="page" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="days.html">Days</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="months.html">Months</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="card mx-auto">
+    <div class="accordion" id="accordionExample">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                Background Information and Instructions:
+            </button>
+          </h2>
+          <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+            <div class="accordion-body">
+                In this map the months range between February 2016 and August 2017. The month can be selected in the control panel. The map is split up into blue grids of 10x10 degrees. For the duration of the month the meetings in the grid were counted. The number of meetings is displayed on the marker which is clickable for further information.
+                The marker also provides the number of days this month consisted of in the data, as some months were missing data, which can give an unjust representation. You would think that the map would showcase the differences in meetings over time, but it is more realistic to say that it shows the difference in data over time, as some months were missing days and some days consisted of a lot more messages.
+            </div>
+          </div>
+        </div>
+    </div>
+</div>  
+    <div class="card mx-auto" style="margin-top: 15px;">
+        <h5 class="card-header" >Monthly Meeting Map:</h5>
+                <div id="map"></div>
+    </div>
+    <script  src="scripts/map.js"> </script>
+
+    <div class="card mx-auto">
+        <div class="accordion" id="accordionExample">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                    Background Information and Instructions:
+                </button>
+              </h2>
+              <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    Below is a Sankey diagram similar to that of the daily page. However, now months can be selected. The majority of vessels are also from The Netherlands here.
+                    Furthermore, there are a lot of countries with few vessel meetings, which is why there are so many lines in the graph.
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+        <select id="plotselect" class="form-select form-select-sm" aria-label=".form-select-sm example" style="width: 155px; margin-left: 20px; margin-top: 20px;" onchange="findplot()" >
+            <option value="1">2017-January</option>
+            <option value="2">2017-February</option>
+            <option value="3">2017-March</option>
+            <option value="4">2017-April</option>
+            <option value="5">2017-May</option>
+            <option value="6">2017-June</option>
+            <option value="7">2017-July</option>
+            <option value="8">2017-August</option>
+            <option value="9">2016-February</option>
+            <option value="10">2016-March</option>
+            <option value="11">2016-April</option>
+            <option value="12">2016-May</option>
+            <option value="13">2016-June</option>
+            <option value="14">2016-July</option>
+            <option value="15">2016-August</option>
+            <option value="16">2016-September</option>
+            <option value="17">2016-October</option>
+            <option value="18">2016-November</option>
+            <option value="19">2016-December</option>
+        </select>
+      <div id="myDiv"></div>
+      <script  src="scripts/charts.js"> </script>
+</body>
+   <!-- Footer-->
+   <footer class="py-5 bg-dark">
+    <div class="container"><p class="m-0 text-center text-white">Visualisation for LSDE 2021 Copyright &copy;</p></div>
+</footer>

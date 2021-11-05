@@ -1,10 +1,318 @@
 /* Can make changes to webpage in CSS here */
 
+#myDiv { 
+  height: 600px; 
+  width: 100%;
+}  
+
+
 #mapid { 
-    height: 900px; 
+    height: 800px; 
     width: 1035px;
   }
+
+#map { 
+  height: 800px; 
+  width: 1035px;
+}  
 
 #canvas { 
   margin-top: 50px;
 }
+
+table, tr, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  margin: -5px;
+  padding: 3px;
+  }
+  tr:nth-child(even) {
+    background-color: #e2e2e2;
+  }
+
+  /* awesome-number Marker setup */
+.awesome-number-marker {
+  background: url('img/markers-soft.png') no-repeat 0 0;
+  width: 35px;
+  height: 46px;
+  position:absolute;
+  left:0;
+  top:0;
+  display: block;
+  text-align: center;
+}
+
+.awesome-number-marker i {
+  color: #333;
+  margin-top: 10px;
+  display: inline-block;
+  font-size: 10px;
+}
+
+.awesome-number-marker .icon-white {
+  color: #fff;
+}
+
+/* Colors */
+.awesome-number-marker-icon-red {
+  background-position: 0 0;
+}
+
+.awesome-number-marker-icon-darkred {
+  background-position: -180px 0;
+}
+
+.awesome-number-marker-icon-lightred {
+  background-position: -360px 0;
+}
+
+.awesome-number-marker-icon-orange {
+  background-position: -36px 0;
+}
+
+.awesome-number-marker-icon-green {
+  background-position: -72px 0;
+}
+
+.awesome-number-marker-icon-darkgreen {
+  background-position: -252px 0;
+}
+
+.awesome-number-marker-icon-lightgreen {
+  background-position: -432px 0;
+}
+
+/* styledlayer for layer control */
+@font-face {
+  font-family: BebasNeueRegular;
+  src: url(fonts/BebasNeue-webfont.woff);
+}
+
+@font-face {
+  font-family: Alegreya-Regular;
+  src: url(fonts/Alegreya-Regular.ttf);
+}
+
+@font-face {
+  font-family: Ubuntu-Medium;
+  src: url(fonts/Ubuntu-Medium.ttf);
+}
+
+@font-face {
+  font-family: Ubuntu-Regular;
+  src: url(fonts/Ubuntu-Regular.ttf);
+}
+
+.ac-container{
+width: auto;
+text-align: left;
+overflow-y: auto;
+overflow-x: hidden;
+height: auto;
+}
+
+div[id^="leaflet-control-accordion-layers"] > label {
+font-family: 'BebasNeueRegular', 'Arial Narrow', Arial, sans-serif;
+padding: 5px 20px;
+position: relative;
+z-index: 20;
+display: block;
+height: 25px;
+cursor: pointer;
+color: #777;
+text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
+line-height: 33px;
+font-size: 19px;
+background: #ffffff;
+background: -moz-linear-gradient(top, #ffffff 1%, #eaeaea 100%);
+background: -webkit-gradient(linear, left top, left bottom, color-stop(1%,#ffffff), color-stop(100%,#eaeaea));
+background: -webkit-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
+background: -o-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
+background: -ms-linear-gradient(top, #ffffff 1%,#eaeaea 100%);
+background: linear-gradient(top, #ffffff 1%,#eaeaea 100%);
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#eaeaea',GradientType=0 );
+box-shadow:
+  0px 0px 0px 1px rgba(155,155,155,0.3),
+  1px 0px 0px 0px rgba(255,255,255,0.9) inset,
+  0px 2px 2px rgba(0,0,0,0.1);
+  box-sizing: content-box;
+  cursor:pointer;
+  width: auto;
+  margin: 0;
+}
+div[id^="leaflet-control-accordion-layers"] > label:hover {
+background: #fff;
+}
+.ac-container input.menu:checked + label,
+.ac-container input.menu:checked + label:hover{
+background: #c6e1ec;
+color: #3d7489;
+text-shadow: 0px 1px 1px rgba(255,255,255, 0.6);
+box-shadow:
+  0px 0px 0px 1px rgba(155,155,155,0.3),
+  0px 2px 2px rgba(0,0,0,0.1);
+}
+.ac-container div[id^="leaflet-control-accordion-layers"] > label:hover:after,
+.ac-container input.menu:checked + div[id^="leaflet-control-accordion-layers"] > label:hover:after{
+content: '';
+position: absolute;
+width: 24px;
+height: 24px;
+right: 13px;
+top: 7px;
+background: transparent url(img/arrow_down.png) no-repeat center center;
+}
+.ac-container input.menu:checked + div[id^="leaflet-control-accordion-layers"] > label:hover:after{
+background-image: url(img/arrow_up.png);
+}
+.ac-container input.menu{
+display: none;
+}
+.ac-container article{
+background: rgba(255, 255, 255, 0.5);
+margin-top: -1px;
+overflow: hidden;
+height: 0px;
+  padding: 0px;
+  line-height: 0px;
+position: relative;
+z-index: 10;
+-webkit-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+-moz-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+-o-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+-ms-transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+transition: height 0.3s ease-in-out, box-shadow 0.6s linear;
+}
+
+.ac-container input.menu:checked ~ article{
+-webkit-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+-moz-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+-o-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+-ms-transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+transition: height 0.5s ease-in-out, box-shadow 0.1s linear;
+}
+
+.ac-container input.menu:checked ~ article.ac-large{
+height: auto;
+max-height : 300px;
+padding: 8px 0;
+overflow-y: auto;
+  line-height: 18px;
+}
+
+.ac-container article label {
+  display: inline;
+  cursor: pointer;
+}
+
+.ac-container .group-toggle-container {
+  text-align: right;
+  margin-right: 3px;
+  line-height: 0px;
+  display: none;
+  height: 20px;
+}
+
+.ac-container input.menu:checked ~ .group-toggle-container {
+  display: block;
+line-height: 1em;
+}
+
+.menu-item-radio{
+font-family: 'Ubuntu-Regular', Arial, sans-serif;
+font-size: 13px;
+
+}
+
+.menu-item-checkbox{
+font-family: 'Ubuntu-Regular', Arial, sans-serif;
+font-size: 13px;
+
+}
+
+.leaflet-control-layers-expanded {
+  padding: 5px;
+}
+
+.leaflet-control-layers:hover {
+box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+background: #e0e3ec url(img/bgnoise_lg.jpg) repeat top left;
+border-radius: 5px;
+}
+
+/* marketcluster */
+.leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
+	-webkit-transition: -webkit-transform 0.3s ease-out, opacity 0.3s ease-in;
+	-moz-transition: -moz-transform 0.3s ease-out, opacity 0.3s ease-in;
+	-o-transition: -o-transform 0.3s ease-out, opacity 0.3s ease-in;
+	transition: transform 0.3s ease-out, opacity 0.3s ease-in;
+}
+
+.leaflet-cluster-spider-leg {
+	/* stroke-dashoffset (duration and function) should match with leaflet-marker-icon transform in order to track it exactly */
+	-webkit-transition: -webkit-stroke-dashoffset 0.3s ease-out, -webkit-stroke-opacity 0.3s ease-in;
+	-moz-transition: -moz-stroke-dashoffset 0.3s ease-out, -moz-stroke-opacity 0.3s ease-in;
+	-o-transition: -o-stroke-dashoffset 0.3s ease-out, -o-stroke-opacity 0.3s ease-in;
+	transition: stroke-dashoffset 0.3s ease-out, stroke-opacity 0.3s ease-in;
+}
+
+.marker-cluster-small {
+	background-color: rgba(181, 226, 140, 0.6);
+	}
+.marker-cluster-small div {
+	background-color: rgba(110, 204, 57, 0.6);
+	}
+
+.marker-cluster-medium {
+	background-color: rgba(241, 211, 87, 0.6);
+	}
+.marker-cluster-medium div {
+	background-color: rgba(240, 194, 12, 0.6);
+	}
+
+.marker-cluster-large {
+	background-color: rgba(253, 156, 115, 0.6);
+	}
+.marker-cluster-large div {
+	background-color: rgba(241, 128, 23, 0.6);
+	}
+
+	/* IE 6-8 fallback colors */
+.leaflet-oldie .marker-cluster-small {
+	background-color: rgb(181, 226, 140);
+	}
+.leaflet-oldie .marker-cluster-small div {
+	background-color: rgb(110, 204, 57);
+	}
+
+.leaflet-oldie .marker-cluster-medium {
+	background-color: rgb(241, 211, 87);
+	}
+.leaflet-oldie .marker-cluster-medium div {
+	background-color: rgb(240, 194, 12);
+	}
+
+.leaflet-oldie .marker-cluster-large {
+	background-color: rgb(253, 156, 115);
+	}
+.leaflet-oldie .marker-cluster-large div {
+	background-color: rgb(241, 128, 23);
+}
+
+.marker-cluster {
+	background-clip: padding-box;
+	border-radius: 20px;
+	}
+.marker-cluster div {
+	width: 30px;
+	height: 30px;
+	margin-left: 5px;
+	margin-top: 5px;
+
+	text-align: center;
+	border-radius: 15px;
+	font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+	}
+.marker-cluster span {
+	line-height: 30px;
+	}

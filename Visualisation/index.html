@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <title>Meetings at Sea</title>
+    <link rel="stylesheet" href="static/style.css">
+    <link rel="stylesheet" href="static/bootstrap.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <!-- Responsive navbar-->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">Meetings At Sea</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="days.html">Days</a></li>
+                    <li class="nav-item"><a class="nav-link" href="months.html">Months</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- Header - set the background image for the header in the line below-->
+    <header class="py-5 bg-image-full" style="background-image: url('static/img/sea.jpeg')">
+        <div class="text-center my-5">
+            <img class="img-fluid rounded-circle mb-4" src="static/img/G5.png" alt="G5" />
+            <h1 class="text-white fs-3 fw-bolder">Group 5: Meetings At Sea</h1>
+            <p class="text-white-50 mb-0">By Jamie Faber (2754619), Sebastiaan Kruize (2626979) and Loek van Steijn (2601124)</p>
+        </div>
+    </header>
+    <!-- Content section-->
+    <section class="py-5">
+        <div class="container my-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <h2>About:</h2>
+                    <p class="mb-0"> In this project 2.6TB of data is used to display vessel meetings at sea. The data entails AIS messages, which contain identification information of the vessels. 
+                        As the sea is vast, it is difficult to monitor all meetings. This can lead to off the radar illegal activity. Our goal is to showcase relevant meetings. To do this the meetings were displayed on a map using Leaflet.
+                        On this website meetings for each day are visible on the <a href="days.html">Days page</a> and meetings for each month are visible on the <a href="months.html">Months page</a>. Below the maps is a Sankey graph, which visualizes the flag state of the meeting vessels. </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Footer-->
+    <footer class="py-5 bg-dark">
+        <div class="container"><p class="m-0 text-center text-white">Visualisation for LSDE 2021 Copyright &copy;</p></div>
+    </footer>
